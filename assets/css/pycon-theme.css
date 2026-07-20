@@ -1,0 +1,544 @@
+/**
+ * PyCon Colombia 2026 — "Understanding Cognitive Complexity in Python"
+ * Theme override layered on top of dist/theme/white.css + monokai.css.
+ *
+ * Palette (PyCon Colombia 2026 brand):
+ *   #FFFFFF  card surfaces
+ *   #F2F3FD  slide background (soft lavender)
+ *   #B6BDF0  periwinkle accent / borders
+ *   #614AD3  primary purple
+ */
+
+@import url(../fonts/fonts.css);
+
+:root {
+  /* reveal.js theme variables */
+  --r-background-color: #f2f3fd;
+  --r-main-font: 'Source Sans Pro', 'Inter', Helvetica, sans-serif;
+  --r-main-font-size: 40px;
+  --r-main-color: #241f3d;
+  --r-heading-font: 'Space Grotesk', 'Source Sans Pro', sans-serif;
+  --r-heading-color: #614ad3;
+  --r-heading-text-transform: none;
+  --r-heading-font-weight: 700;
+  --r-heading1-size: 2.3em;
+  --r-heading2-size: 1.45em;
+  --r-heading3-size: 1.1em;
+  --r-code-font: 'JetBrains Mono', 'Fira Code', monospace;
+  --r-link-color: #614ad3;
+  --r-link-color-hover: #7c68e6;
+  --r-selection-background-color: #b6bdf0;
+  --r-selection-color: #241f3d;
+
+  /* deck tokens */
+  --pycon-white: #ffffff;
+  --pycon-lavender: #f2f3fd;
+  --pycon-periwinkle: #b6bdf0;
+  --pycon-purple: #614ad3;
+  --pycon-purple-soft: #7c68e6;
+  --pycon-ink: #241f3d;
+  --pycon-muted: #6d678f;
+  --pycon-border: #dfe2f8;
+
+  /* dark code world (deep indigo, not monokai gray) */
+  --code-bg: #1e1a32;
+  --code-bg-raised: #282343;
+  --code-line-number: #565179;
+
+  /* severity ramp for complexity totals */
+  --cogc-sev-low: #1f9d55;   /* <= 5  */
+  --cogc-sev-mid: #d97706;   /* 6-10 */
+  --cogc-sev-high: #e5484d;  /* >= 11 */
+
+  /* nesting depth ramp (bars at the left of scored lines) */
+  --cogc-nest-0: #b6bdf0;
+  --cogc-nest-1: #8f7fe8;
+  --cogc-nest-2: #b054c9;
+  --cogc-nest-3: #e5484d;
+}
+
+.reveal-viewport {
+  background: var(--pycon-lavender);
+  /* faint brand wash in the corners so slides don't feel flat */
+  background-image:
+    radial-gradient(38em 24em at 110% -10%, rgba(182, 189, 240, 0.35), transparent 60%),
+    radial-gradient(30em 20em at -10% 110%, rgba(182, 189, 240, 0.25), transparent 60%);
+}
+
+.reveal h1, .reveal h2 { letter-spacing: -0.02em; }
+.reveal h2 { margin-bottom: 0.45em; }
+
+.reveal .slides { text-align: left; }
+.reveal .slides section.centered { text-align: center; }
+
+/* small caps label above a heading */
+.eyebrow {
+  font-family: var(--r-heading-font);
+  font-size: 0.5em;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pycon-muted);
+  margin-bottom: 0.4em;
+}
+
+.muted { color: var(--pycon-muted); }
+.accent { color: var(--pycon-purple); }
+
+/* short brand rule under statement/title headings */
+.tick {
+  width: 1.6em;
+  height: 0.13em;
+  border-radius: 999px;
+  background: var(--pycon-purple);
+  margin: 0.5em 0 0.7em;
+}
+.centered .tick, .statement .tick { margin-left: auto; margin-right: auto; }
+
+/* ---------------------------------------------------------------- */
+/* Statement slides (breathing beats)                                */
+/* ---------------------------------------------------------------- */
+
+.statement { text-align: center; }
+.statement h2 {
+  font-size: 1.9em;
+  color: var(--pycon-ink);
+}
+.statement h2 em {
+  font-style: normal;
+  color: var(--pycon-purple);
+}
+.statement .sub {
+  font-size: 0.85em;
+  color: var(--pycon-muted);
+}
+
+/* ---------------------------------------------------------------- */
+/* Code cards (highlight plugin wraps <pre> in .code-wrapper)        */
+/* ---------------------------------------------------------------- */
+
+/* No padding on the pre: the highlight plugin's per-step clones are
+   absolutely positioned to the pre's padding box, so any pre padding would
+   offset them from the base block. Each code element pads itself instead. */
+.reveal pre.code-wrapper {
+  border-radius: 16px;
+  box-shadow: 0 24px 48px -18px rgba(36, 31, 61, 0.45);
+  background: var(--code-bg);
+  padding: 0;
+  width: 100%;
+  overflow: hidden;
+}
+.reveal pre code {
+  border-radius: 16px;
+  padding: 0.85em 0.9em;
+  max-height: 560px;
+  font-size: 1.05em;
+  line-height: 1.45;
+  background: var(--code-bg); /* opaque: each visible clone fully covers the states below it */
+  overflow: hidden; /* snippets are sized to fit; auto would paint scrollbar tracks
+                       on scorer clones whose badge column slightly widens the table */
+}
+/* retint monokai's warm gray to the deck's indigo */
+.reveal .hljs { background: var(--code-bg); }
+
+.reveal .hljs table { margin: 0; border-collapse: collapse; }
+.reveal .hljs-ln-numbers {
+  color: var(--code-line-number);
+  padding-right: 1em !important;
+  text-align: right;
+  user-select: none;
+  vertical-align: top;
+}
+.reveal .hljs-ln-code { padding-left: 0.4em !important; vertical-align: top; }
+
+/* long snippets that must fit the slide */
+.reveal pre.code-sm code { font-size: 0.82em; line-height: 1.4; }
+
+/* while any step clone is visible, the base state must not bleed through
+   at sub-pixel height differences — hide it entirely */
+.reveal pre:has(> code.fragment.visible) > code:not(.fragment) { visibility: hidden; }
+
+/* non-scored illustrative snippets: no dimming */
+.reveal .hljs.cogc-plain.has-highlights tr:not(.highlight-line) { opacity: 1; }
+
+/* ---------------------------------------------------------------- */
+/* Live scorer                                                       */
+/* ---------------------------------------------------------------- */
+
+/* rows scored in earlier steps stay readable while the rest dims */
+.reveal .hljs.cogc-block.has-highlights tr:not(.highlight-line) { opacity: 0.38; }
+.reveal .hljs.cogc-block.has-highlights tr.cogc-scored:not(.highlight-line) { opacity: 0.85; }
+
+/* nesting depth bar on the scored line */
+.reveal .cogc-block td.cogc-nest-0 { box-shadow: inset 3px 0 0 var(--cogc-nest-0); }
+.reveal .cogc-block td.cogc-nest-1 { box-shadow: inset 3px 0 0 var(--cogc-nest-1), inset 8px 0 0 -5px var(--cogc-nest-1); }
+.reveal .cogc-block td.cogc-nest-2 { box-shadow: inset 3px 0 0 var(--cogc-nest-2), inset 8px 0 0 -5px var(--cogc-nest-2), inset 13px 0 0 -10px var(--cogc-nest-2); }
+.reveal .cogc-block td.cogc-nest-3 { box-shadow: inset 3px 0 0 var(--cogc-nest-3), inset 8px 0 0 -5px var(--cogc-nest-3), inset 13px 0 0 -10px var(--cogc-nest-3), inset 18px 0 0 -15px var(--cogc-nest-3); }
+.reveal .cogc-block td[class*="cogc-nest-"] { padding-left: 0.85em !important; }
+
+/* the +N badge cell appended by cogc-scorer.js — must never increase the
+   row height, or clones grow taller than the base block and clip */
+.reveal .cogc-badge-cell {
+  padding: 0 0.6em 0 1em;
+  white-space: nowrap;
+  vertical-align: middle;
+  width: 1%;
+}
+.cogc-badge {
+  display: inline-block;
+  font-family: var(--r-code-font);
+  font-size: 0.66em;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.22em 0.55em;
+  border-radius: 999px;
+  background: rgba(182, 189, 240, 0.16);
+  color: var(--pycon-periwinkle);
+  border: 1px solid rgba(182, 189, 240, 0.35);
+}
+.cogc-badge b {
+  font-weight: 700;
+  color: #fff;
+  margin-right: 0.35em;
+}
+/* the badge added by the current step pulses in */
+tr.highlight-line .cogc-badge {
+  background: var(--pycon-purple);
+  border-color: var(--pycon-purple-soft);
+  color: #e9e6ff;
+  animation: cogc-badge-pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+@keyframes cogc-badge-pop {
+  0% { transform: scale(0.3); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* running total: an in-flow scoreboard strip at the top of every code state
+   (base and clones alike), so it can never overlap badges and every state
+   keeps identical geometry */
+.cogc-total {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 0.5em;
+  font-family: var(--r-heading-font);
+  border-bottom: 1px solid rgba(182, 189, 240, 0.18);
+  padding: 0 0.3em 0.35em;
+  margin-bottom: 0.55em;
+}
+.cogc-total .cogc-total-label {
+  font-size: 0.5em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pycon-periwinkle);
+  font-weight: 500;
+}
+.cogc-total .cogc-total-value {
+  font-size: 1.25em;
+  font-weight: 700;
+  min-width: 1.2em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.cogc-sev-none .cogc-total-value { color: var(--pycon-periwinkle); }
+.cogc-sev-low  .cogc-total-value { color: #4ade80; }
+.cogc-sev-mid  .cogc-total-value { color: #fbbf24; }
+.cogc-sev-high .cogc-total-value { color: #ff7b81; }
+
+/* pre needs to anchor the absolutely-positioned totals */
+.reveal pre.code-wrapper { position: relative; }
+
+/* ---------------------------------------------------------------- */
+/* Versus / arrow comparison widget                                  */
+/* ---------------------------------------------------------------- */
+
+.cogc-versus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.3em 1.1em;
+  margin: 0.35em auto 0;
+}
+.cogc-versus-item { text-align: center; }
+.cogc-versus-value {
+  font-family: var(--r-heading-font);
+  font-size: 2em;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.cogc-versus-item.sev-low  .cogc-versus-value { color: var(--cogc-sev-low); }
+.cogc-versus-item.sev-mid  .cogc-versus-value { color: var(--cogc-sev-mid); }
+.cogc-versus-item.sev-high .cogc-versus-value { color: var(--cogc-sev-high); }
+.cogc-versus-item.sev-none .cogc-versus-value { color: var(--pycon-ink); }
+.cogc-versus-label {
+  font-size: 0.5em;
+  color: var(--pycon-muted);
+  margin-top: 0.25em;
+  letter-spacing: 0.04em;
+}
+.cogc-versus-sep {
+  font-family: var(--r-heading-font);
+  font-size: 1em;
+  font-weight: 500;
+  color: var(--pycon-periwinkle);
+}
+.cogc-versus-delta {
+  display: block;
+  font-size: 0.45em;
+  font-weight: 700;
+  color: var(--cogc-sev-low);
+  margin-top: 0.3em;
+}
+.cogc-versus-note {
+  /* full-row width so flex-wrap always pushes it under the numbers */
+  flex-basis: 100%;
+  text-align: center;
+  font-size: 0.6em;
+  color: var(--pycon-muted);
+  margin: 0 auto;
+}
+
+/* ---------------------------------------------------------------- */
+/* Terminal mockup                                                   */
+/* ---------------------------------------------------------------- */
+
+.terminal {
+  background: var(--code-bg);
+  border-radius: 14px;
+  box-shadow: 0 24px 48px -18px rgba(36, 31, 61, 0.45);
+  overflow: hidden;
+  margin: 0 auto;
+  width: 100%;
+}
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  background: var(--code-bg-raised);
+  padding: 0.5em 0.9em;
+  font-size: 0.5em;
+}
+.terminal-bar .dot { width: 0.75em; height: 0.75em; border-radius: 50%; }
+.dot-red { background: #ff5f57; }
+.dot-yellow { background: #febc2e; }
+.dot-green { background: #28c840; }
+.terminal-bar .terminal-title {
+  margin-left: auto;
+  margin-right: auto;
+  color: var(--code-line-number);
+  font-family: var(--r-code-font);
+}
+.terminal-body {
+  font-family: var(--r-code-font);
+  font-size: 0.52em;
+  line-height: 1.55;
+  color: #d6d3ee;
+  padding: 1em 1.4em 1.2em;
+  margin: 0;
+  white-space: pre;
+  overflow-x: auto;
+  text-align: left;
+}
+.terminal-body .t-prompt { color: var(--pycon-periwinkle); font-weight: 600; }
+.terminal-body .t-dim { color: var(--code-line-number); }
+.terminal-body .t-green { color: #4ade80; }
+.terminal-body .t-red { color: #ff7b81; }
+.terminal-body .t-yellow { color: #fbbf24; }
+.terminal-body .t-purple { color: #a598f0; }
+
+/* ---------------------------------------------------------------- */
+/* Cards, takeaways, layout helpers                                  */
+/* ---------------------------------------------------------------- */
+
+.cols {
+  display: flex;
+  gap: 1em;
+  align-items: flex-start;
+  justify-content: center;
+}
+.cols > * { flex: 1; min-width: 0; }
+
+.card {
+  background: var(--pycon-white);
+  border: 1px solid var(--pycon-border);
+  border-radius: 14px;
+  padding: 0.7em 0.9em;
+  box-shadow: 0 10px 24px -16px rgba(97, 74, 211, 0.35);
+}
+.card h3 {
+  font-size: 0.75em;
+  margin: 0 0 0.3em;
+  color: var(--pycon-ink);
+}
+.card p { font-size: 0.6em; margin: 0; color: var(--pycon-muted); }
+.card .card-kicker {
+  font-family: var(--r-code-font);
+  font-size: 0.5em;
+  font-weight: 600;
+  color: var(--pycon-purple);
+  display: block;
+  margin-bottom: 0.4em;
+}
+
+/* one-line rule takeaway that lands after a scored example */
+.takeaway {
+  background: var(--pycon-white);
+  border: 1px solid var(--pycon-border);
+  border-left: 5px solid var(--pycon-purple);
+  border-radius: 12px;
+  padding: 0.45em 0.9em;
+  font-size: 0.65em;
+  margin-top: 0.5em;
+  box-shadow: 0 10px 24px -16px rgba(97, 74, 211, 0.35);
+}
+.takeaway b { color: var(--pycon-purple); }
+
+/* quote card (Campbell) */
+.quote {
+  border-left: 5px solid var(--pycon-periwinkle);
+  padding: 0.2em 0 0.2em 0.8em;
+  font-size: 0.78em;
+  font-style: italic;
+  color: var(--pycon-ink);
+}
+.quote .quote-by {
+  display: block;
+  font-style: normal;
+  font-size: 0.72em;
+  color: var(--pycon-muted);
+  margin-top: 0.5em;
+}
+
+/* numbered takeaway rows on the summary slide */
+.numbered { display: flex; flex-direction: column; gap: 0.55em; }
+.numbered .row {
+  display: flex;
+  gap: 0.8em;
+  align-items: baseline;
+  background: var(--pycon-white);
+  border: 1px solid var(--pycon-border);
+  border-radius: 12px;
+  padding: 0.5em 0.9em;
+}
+.numbered .row .n {
+  font-family: var(--r-heading-font);
+  font-weight: 700;
+  color: var(--pycon-periwinkle);
+  font-size: 1.05em;
+}
+.numbered .row p { margin: 0; font-size: 0.68em; }
+.numbered .row p b { color: var(--pycon-purple); }
+
+/* title & closing slides */
+.title-slide { text-align: left; }
+.title-slide .conf-logo { height: 2.4em; margin-bottom: 1.2em; }
+.title-slide h1 { font-size: 1.9em; color: var(--pycon-ink); }
+.title-slide h1 em {
+  font-style: normal;
+  color: var(--pycon-purple);
+}
+.title-slide .speaker {
+  margin-top: 1.4em;
+  font-size: 0.7em;
+  color: var(--pycon-muted);
+}
+.title-slide .speaker b { color: var(--pycon-ink); }
+
+.bio {
+  display: flex;
+  gap: 1.2em;
+  align-items: center;
+  background: var(--pycon-white);
+  border: 1px solid var(--pycon-border);
+  border-radius: 18px;
+  padding: 1em 1.3em;
+  box-shadow: 0 18px 40px -20px rgba(97, 74, 211, 0.4);
+}
+.bio img.avatar {
+  width: 4.2em;
+  height: 4.2em;
+  border-radius: 50%;
+  border: 3px solid var(--pycon-periwinkle);
+}
+.bio h3 { margin: 0; font-size: 1em; color: var(--pycon-ink); }
+.bio .handle { font-family: var(--r-code-font); font-size: 0.55em; color: var(--pycon-purple); }
+.bio p { margin: 0.3em 0 0; font-size: 0.62em; color: var(--pycon-muted); }
+
+.link-grid {
+  display: flex;
+  gap: 0.8em;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 0.8em;
+}
+.link-grid .link-card {
+  background: var(--pycon-white);
+  border: 1px solid var(--pycon-border);
+  border-radius: 12px;
+  padding: 0.5em 0.9em;
+  font-size: 0.55em;
+  text-align: left;
+}
+.link-grid .link-card .k {
+  display: block;
+  font-size: 0.8em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pycon-muted);
+}
+.link-grid .link-card .v { font-family: var(--r-code-font); color: var(--pycon-purple); }
+
+/* static score chip used on the auto-animate refactor slides */
+.chip-row { display: flex; justify-content: flex-end; margin-bottom: 0.3em; }
+.score-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5em;
+  font-family: var(--r-heading-font);
+  background: var(--pycon-white);
+  border: 1px solid var(--pycon-border);
+  border-radius: 999px;
+  padding: 0.28em 0.8em;
+  font-size: 0.55em;
+  box-shadow: 0 8px 18px -12px rgba(97, 74, 211, 0.4);
+}
+.score-chip .k {
+  font-size: 0.75em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pycon-muted);
+  font-weight: 500;
+}
+.score-chip .v { font-weight: 700; font-size: 1.15em; }
+.score-chip .v.sev-low { color: var(--cogc-sev-low); }
+.score-chip .v.sev-mid { color: var(--cogc-sev-mid); }
+.score-chip .v.sev-high { color: var(--cogc-sev-high); }
+.score-chip .delta { font-weight: 700; color: var(--cogc-sev-low); font-size: 0.85em; }
+
+/* side-by-side code comparisons need smaller type */
+.cols pre code { font-size: 0.78em; }
+.cols .col-label {
+  font-family: var(--r-heading-font);
+  font-size: 0.55em;
+  font-weight: 500;
+  color: var(--pycon-muted);
+  margin: 0 0 0.5em 0.2em;
+}
+.cols .col-label b { color: var(--pycon-purple); }
+
+/* fine print under a slide's main content */
+.footnote {
+  font-size: 0.5em;
+  color: var(--pycon-muted);
+  margin-top: 0.8em;
+}
+
+/* keep reveal's progress bar on brand */
+.reveal .progress { color: var(--pycon-purple); }
+.reveal .controls { color: var(--pycon-purple); }
+
+@media (prefers-reduced-motion: reduce) {
+  tr.highlight-line .cogc-badge { animation: none; }
+}

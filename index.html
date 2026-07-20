@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+		/>
+
+		<title>Understanding Cognitive Complexity in Python — PyCon Colombia 2026</title>
+
+		<link rel="stylesheet" href="dist/reset.css" />
+		<link rel="stylesheet" href="dist/reveal.css" />
+		<link rel="stylesheet" href="dist/theme/white.css" />
+		<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" />
+		<link rel="stylesheet" href="assets/css/pycon-theme.css" />
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+
+				<!-- ============================================================
+				     ACT 1 — THE HOOK
+				     ============================================================ -->
+
+				<!-- 1. Title -->
+				<section class="title-slide">
+					<img class="conf-logo" src="assets/img/Logo_horizontal_pycon_2026.svg" alt="PyCon Colombia 2026" />
+					<h1>Understanding <em>Cognitive Complexity</em> in Python</h1>
+					<div class="tick"></div>
+					<p class="speaker">
+						<b>Robin Hafid Quintero Lopez</b> · rohaquinlop<br />
+						PyCon Colombia 2026
+					</p>
+					<aside class="notes">
+						Welcome. Today: a metric that measures how hard code is to understand —
+						where it comes from, how it works, and how to act on it.
+					</aside>
+				</section>
+
+				<!-- 2. About me -->
+				<section>
+					<p class="eyebrow">About me</p>
+					<div class="bio">
+						<img class="avatar" src="assets/img/avatar.jpg" alt="Robin Quintero" />
+						<div>
+							<h3>Robin Quintero <span class="handle">rohaquinlop</span></h3>
+							<p>Software Engineer II @ GenLogs · author of <b>complexipy</b>, automathon, robinzhon</p>
+							<p>PyCon Colombia 2025 · Python Cali 2024 &amp; 2026 · contributor to rust-lang/rust</p>
+						</div>
+					</div>
+					<aside class="notes">
+						30 seconds, tops. Mention complexipy once — it comes back later.
+					</aside>
+				</section>
+
+				<!-- 3. Cold open: the gnarly function -->
+				<section>
+					<p class="eyebrow">Let's start with code</p>
+					<h2>How long until you can safely change this?</h2>
+					<pre class="code-sm"><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+def apply_discounts(orders, user):
+    total = 0
+    for order in orders:
+        if order.status == "paid":
+            for item in order.items:
+                if item.category == "promo":
+                    if user.is_premium:
+                        total += item.price * 0.8
+                    else:
+                        total += item.price * 0.9
+                elif item.price > 100:
+                    total += item.price * 0.95
+        elif order.status == "pending":
+            total += order.total
+    return total
+</code></pre>
+					<p class="footnote fragment">Nothing here is <i>clever</i>. Every line is simple. And still…</p>
+					<aside class="notes">
+						Let them read for ~15 seconds in silence. This function comes back at the
+						end of the theory section — they will score it themselves.
+					</aside>
+				</section>
+
+				<!-- 4. Cyclomatic complexity, scored live in CC mode -->
+				<section>
+					<p class="eyebrow">Since 1976</p>
+					<h2>We already measure this… right?</h2>
+					<p style="font-size:0.6em; margin-bottom:0.5em" class="muted">
+						McCabe's <b>Cyclomatic Complexity</b>: the number of independent paths
+						through the code — every function starts at 1, every branch adds 1.
+					</p>
+					<pre class="code-sm"><code class="language-python hljs cogc-block" data-trim
+						data-line-numbers="|1|3|5|6"
+						data-cogc-mode="cc" data-cogc-label="Cyclomatic"
+						data-cogc-steps='[
+							{"total": 0},
+							{"total": 1, "line": 1, "inc": 1, "label": "function"},
+							{"total": 2, "line": 3, "inc": 1, "label": "branch"},
+							{"total": 3, "line": 5, "inc": 1, "label": "branch"},
+							{"total": 4, "line": 6, "inc": 1, "label": "branch"}
+						]'>
+def parse_config(path):
+    config = {}
+    if not path.exists():
+        return config
+    for line in path.read_text().splitlines():
+        if "=" in line:
+            key, value = line.split("=", 1)
+            config[key] = value
+    return config
+</code></pre>
+					<div class="takeaway fragment">
+						<b>CC = 4</b> → you need 4 test cases for full branch coverage.
+						Perfect for <b>testability</b>. But is it what makes code hard to <i>read</i>?
+					</div>
+					<aside class="notes">
+						First use of the counter — explain the visual: badges land on lines,
+						the box on the right keeps the running total. CC here is the baseline
+						everyone knows; we build the critique on top of it.
+					</aside>
+				</section>
+
+				<!-- 5. The lie CC tells: equal CC, unequal effort -->
+				<section>
+					<p class="eyebrow">The problem</p>
+					<h2>Same number, very different code</h2>
+					<div class="cols">
+						<div>
+							<p class="col-label"><b>get_words</b> — read at a glance</p>
+							<pre><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+def get_words(count):
+    match count:
+        case 1:
+            return "one"
+        case 2:
+            return "a couple"
+        case 3:
+            return "a few"
+        case 4:
+            return "several"
+        case _:
+            return "lots"
+</code></pre>
+						</div>
+						<div>
+							<p class="col-label"><b>sum_of_primes</b> — read very carefully</p>
+							<pre><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+def sum_of_primes(max):
+    total = 0
+    for i in range(1, max + 1):
+        is_prime = True
+        for j in range(2, i):
+            if i % j == 0:
+                is_prime = False
+                break
+        if is_prime:
+            total += i
+    return total
+</code></pre>
+						</div>
+					</div>
+					<div class="cogc-versus fragment">
+						<div class="cogc-versus-item sev-none">
+							<div class="cogc-versus-value">5</div>
+							<div class="cogc-versus-label">Cyclomatic</div>
+						</div>
+						<div class="cogc-versus-sep">=</div>
+						<div class="cogc-versus-item sev-none">
+							<div class="cogc-versus-value">5</div>
+							<div class="cogc-versus-label">Cyclomatic</div>
+						</div>
+						<div class="cogc-versus-note">
+							Equal paths ≠ equal effort. CC was built to measure testability —
+							it was never a measure of <b>understandability</b>.
+						</div>
+					</div>
+					<aside class="notes">
+						This is the white paper's own opening example, ported to Python.
+						Ask for a show of hands: which one would you rather review?
+					</aside>
+				</section>
+
+				<!-- ============================================================
+				     ACT 2 — DISCOVER THE METRIC BY SCORING CODE LIVE
+				     ============================================================ -->
+
+				<!-- 6. Enter cognitive complexity -->
+				<section>
+					<p class="eyebrow">2017 · SonarSource</p>
+					<h2>Cognitive Complexity</h2>
+					<p style="font-size:0.75em">
+						Proposed by <b>G. Ann Campbell</b>: a score for how hard code is to
+						<span class="accent"><b>understand</b></span> — built from programmer
+						intuition, not from a mathematical model.
+					</p>
+					<div class="quote fragment">
+						"Ignore structures that allow multiple statements to be readably
+						shorthanded into one. Increment for each break in the linear flow.
+						Increment when flow-breaking structures are nested."
+						<span class="quote-by">— the three rules, Cognitive Complexity white paper</span>
+					</div>
+					<p class="footnote fragment">
+						That's the whole spec. Let's watch it run on real code.
+					</p>
+					<aside class="notes">
+						Don't explain the rules abstractly — announce that we'll discover them
+						by scoring the two functions we just saw.
+					</aside>
+				</section>
+
+				<!-- 7. Live score: sum_of_primes -->
+				<section>
+					<p class="eyebrow">Rule discovery #1</p>
+					<h2>Scoring <code style="text-transform:none">sum_of_primes</code></h2>
+					<pre class="code-sm"><code class="language-python hljs cogc-block" data-trim
+						data-line-numbers="|3|5|6|8|9"
+						data-cogc-steps='[
+							{"total": 0},
+							{"total": 1, "line": 3, "inc": 1, "nest": 0, "label": "for"},
+							{"total": 3, "line": 5, "inc": 2, "nest": 1, "label": "for, nested"},
+							{"total": 6, "line": 6, "inc": 3, "nest": 2, "label": "if, nested x2"},
+							{"total": 6, "line": 8, "inc": 0, "nest": 2, "label": "break is free"},
+							{"total": 8, "line": 9, "inc": 2, "nest": 1, "label": "if, nested"}
+						]'>
+def sum_of_primes(max):
+    total = 0
+    for i in range(1, max + 1):
+        is_prime = True
+        for j in range(2, i):
+            if i % j == 0:
+                is_prime = False
+                break
+        if is_prime:
+            total += i
+    return total
+</code></pre>
+					<div class="takeaway fragment">
+						<b>+1</b> for each break in the linear flow, <b>+1 more per nesting level</b> —
+						the deeper you are, the more context you're holding in your head.
+					</div>
+					<aside class="notes">
+						The signature moment — go slow. Call out the nesting bars: the inner if
+						costs 3, not 1, because you read it while holding two loops in your head.
+						And the break costs nothing: early exits make code clearer.
+					</aside>
+				</section>
+
+				<!-- 8. Live score: get_words -->
+				<section>
+					<p class="eyebrow">Rule discovery #2</p>
+					<h2>Scoring <code style="text-transform:none">get_words</code></h2>
+					<pre class="code-sm"><code class="language-python hljs cogc-block" data-trim
+						data-line-numbers="|2|3-12"
+						data-cogc-steps='[
+							{"total": 0},
+							{"total": 1, "line": 2, "inc": 1, "nest": 0, "label": "match"},
+							{"total": 1, "marks": [
+								{"line": 3, "inc": 0},
+								{"line": 5, "inc": 0},
+								{"line": 7, "inc": 0},
+								{"line": 9, "inc": 0},
+								{"line": 11, "inc": 0, "label": "cases are free"}
+							]}
+						]'>
+def get_words(count):
+    match count:
+        case 1:
+            return "one"
+        case 2:
+            return "a couple"
+        case 3:
+            return "a few"
+        case 4:
+            return "several"
+        case _:
+            return "lots"
+</code></pre>
+					<div class="cogc-versus fragment">
+						<div class="cogc-versus-item sev-mid">
+							<div class="cogc-versus-value">8</div>
+							<div class="cogc-versus-label">sum_of_primes</div>
+						</div>
+						<div class="cogc-versus-sep">vs</div>
+						<div class="cogc-versus-item sev-low">
+							<div class="cogc-versus-value">1</div>
+							<div class="cogc-versus-label">get_words</div>
+						</div>
+						<div class="cogc-versus-note">Same Cyclomatic Complexity. 8× the cognitive load.</div>
+					</div>
+					<aside class="notes">
+						One glance, one comparison target, literal values — a match costs one,
+						no matter how many cases. The metric now agrees with your intuition
+						from three slides ago.
+					</aside>
+				</section>
+
+				<!-- 9. Nesting is the tax -->
+				<section>
+					<p class="eyebrow">Why nesting?</p>
+					<h2>Five structures, two shapes</h2>
+					<div class="cols">
+						<div>
+							<p class="col-label"><b>Linear</b> — one thing at a time</p>
+							<pre><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+def process(items):
+    for i in items:       # +1
+        check(i)
+    for j in items:       # +1
+        if j.valid:       # +2
+            use(j)
+    if items:             # +1
+        init()
+</code></pre>
+						</div>
+						<div>
+							<p class="col-label"><b>Nested</b> — everything at once</p>
+							<pre><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+def process(items):
+    for i in items:            # +1
+        for j in items:        # +2
+            if j.valid:        # +3
+                if j.active:   # +4
+                    use(j)
+    if items:                  # +1
+        init()
+</code></pre>
+						</div>
+					</div>
+					<div class="cogc-versus fragment">
+						<div class="cogc-versus-item sev-low">
+							<div class="cogc-versus-value">5</div>
+							<div class="cogc-versus-label">linear</div>
+						</div>
+						<div class="cogc-versus-sep">vs</div>
+						<div class="cogc-versus-item sev-high">
+							<div class="cogc-versus-value">11</div>
+							<div class="cogc-versus-label">nested</div>
+						</div>
+					</div>
+					<aside class="notes">
+						Campbell: "a linear series of five structures is easier to understand
+						than those same five structures successively nested — regardless of the
+						number of execution paths." Both have the same CC.
+					</aside>
+				</section>
+
+				<!-- 10. Booleans -->
+				<section>
+					<p class="eyebrow">Rule discovery #3</p>
+					<h2>Booleans: mixing is what costs</h2>
+					<div class="cols">
+						<div>
+							<p class="col-label"><b>One sequence</b> of like operators</p>
+							<pre><code class="language-python hljs cogc-plain" data-trim>
+def ready(a, b, c, d):
+    # and, and, and → one sequence
+    return a and b and c and d
+</code></pre>
+							<div class="cogc-versus" style="margin-top:0.4em">
+								<div class="cogc-versus-item sev-low">
+									<div class="cogc-versus-value">1</div>
+									<div class="cogc-versus-label">cognitive</div>
+								</div>
+							</div>
+						</div>
+						<div>
+							<p class="col-label"><b>Three sequences</b> — and / or / and</p>
+							<pre><code class="language-python hljs cogc-plain" data-trim>
+def ready(a, b, c, d):
+    # every and-or switch starts a new one
+    return a and b or c and d
+</code></pre>
+							<div class="cogc-versus" style="margin-top:0.4em">
+								<div class="cogc-versus-item sev-low">
+									<div class="cogc-versus-value">3</div>
+									<div class="cogc-versus-label">cognitive</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="takeaway fragment">
+						<b>+1 per sequence</b>, not per operator — <code>a and b and c and d</code>
+						reads fine; it's the <b>and ↔ or</b> switches that make you stop and think.
+					</div>
+					<aside class="notes">
+						CC charges per operator; CogC discounts uniform chains. Yet another
+						case where the metric encodes taste you already have.
+					</aside>
+				</section>
+
+				<!-- 11. What costs nothing -->
+				<section>
+					<p class="eyebrow">The philosophy</p>
+					<h2>What costs <em>nothing</em></h2>
+					<div class="cols" style="margin-top:0.6em">
+						<div class="card">
+							<span class="card-kicker">+0</span>
+							<h3>Early exits</h3>
+							<p><code>return</code>, <code>break</code>, <code>continue</code> —
+							leaving early usually makes code clearer.</p>
+						</div>
+						<div class="card">
+							<span class="card-kicker">+0</span>
+							<h3>Safety nets</h3>
+							<p><code>with</code>, <code>try</code> / <code>finally</code> —
+							only <code>except</code> adds a branch (+1 each).</p>
+						</div>
+						<div class="card">
+							<span class="card-kicker">+0</span>
+							<h3>Shorthand</h3>
+							<p>Extracting well-named functions, comprehensions as expression
+							shorthand — readable condensation is free.</p>
+						</div>
+					</div>
+					<div class="quote fragment" style="margin-top:0.8em">
+						"It should incent good coding practices: ignore or discount features
+						that make code more readable."
+						<span class="quote-by">— the design principle behind every +0</span>
+					</div>
+					<aside class="notes">
+						This is the part cyclomatic gets backwards — CC often *punishes* the
+						refactors that make code clearer. CogC is designed so that the score
+						drops exactly when readability improves.
+					</aside>
+				</section>
+
+				<!-- 12. The Python easter egg: decorators -->
+				<section>
+					<p class="eyebrow">A PyCon exclusive, sort of</p>
+					<h2>The paper has a Python appendix</h2>
+					<p style="font-size:0.65em" class="muted">
+						Appendix A grants exactly three language exceptions.
+						One of them is ours: <b>decorators</b>.
+					</p>
+					<pre><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+def log_calls(func):
+    def wrapper(*args):       # nesting stays at 0 — decorator exception
+        if args:              # +1, not +2
+            print("called with args")
+        return func(*args)
+    return wrapper            # total: 1
+</code></pre>
+					<div class="takeaway fragment">
+						A function holding <b>only a nested function and a return</b> is a
+						structural pattern, not logic — so the wrapper doesn't count as nesting.
+						Add one more statement to <code>log_calls</code> and the exception is gone.
+					</div>
+					<aside class="notes">
+						Nice trivia beat: the spec is language-agnostic but Python decorators
+						were common enough to earn a carve-out. The exception is deliberately
+						narrow — one extra statement in the outer function and the wrapper
+						counts as level 1 again.
+					</aside>
+				</section>
+
+				<!-- 13. Guess the score (callback to slide 3) -->
+				<section>
+					<p class="eyebrow">Audience round</p>
+					<h2>Remember this one? <span class="accent">Guess the score.</span></h2>
+					<pre class="code-sm"><code class="language-python hljs cogc-block" data-trim
+						data-line-numbers="|3|4|5|6|7|9|11|13"
+						data-cogc-steps='[
+							{"total": 0},
+							{"total": 1,  "line": 3,  "inc": 1, "nest": 0, "label": "for"},
+							{"total": 3,  "line": 4,  "inc": 2, "nest": 1, "label": "if, nested"},
+							{"total": 6,  "line": 5,  "inc": 3, "nest": 2, "label": "for, nested x2"},
+							{"total": 10, "line": 6,  "inc": 4, "nest": 3, "label": "if, nested x3"},
+							{"total": 15, "line": 7,  "inc": 5, "nest": 3, "label": "if, nested x4"},
+							{"total": 16, "line": 9,  "inc": 1, "nest": 3, "label": "else"},
+							{"total": 17, "line": 11, "inc": 1, "nest": 2, "label": "elif"},
+							{"total": 18, "line": 13, "inc": 1, "nest": 0, "label": "elif"}
+						]'>
+def apply_discounts(orders, user):
+    total = 0
+    for order in orders:
+        if order.status == "paid":
+            for item in order.items:
+                if item.category == "promo":
+                    if user.is_premium:
+                        total += item.price * 0.8
+                    else:
+                        total += item.price * 0.9
+                elif item.price > 100:
+                    total += item.price * 0.95
+        elif order.status == "pending":
+            total += order.total
+    return total
+</code></pre>
+					<aside class="notes">
+						Collect guesses out loud BEFORE stepping — anchor a few numbers in the
+						room. Then score it together, one keystroke per shout. Payoff: 18.
+						For reference: its cyclomatic complexity is only 8.
+					</aside>
+				</section>
+
+				<!-- ============================================================
+				     ACT 3 — MEASURE IT: COMPLEXIPY
+				     ============================================================ -->
+
+				<!-- 14. Bridge + complexipy intro -->
+				<section class="statement">
+					<h2>Nobody is counting<br />this <em>by hand</em>.</h2>
+					<div class="tick"></div>
+					<p class="sub">We know what to measure — now let's automate it.</p>
+					<aside class="notes">
+						Breathing beat. Transition from theory to practice.
+					</aside>
+				</section>
+
+				<section>
+					<p class="eyebrow">Measuring it</p>
+					<h2>complexipy</h2>
+					<p style="font-size:0.7em">
+						Cognitive complexity analysis for Python, implementing the white paper —
+						with a <b>Rust</b> engine that scores thousands of functions in milliseconds.
+					</p>
+					<pre><code class="language-bash hljs cogc-plain" data-trim>
+pip install complexipy
+# or
+uv add complexipy
+</code></pre>
+					<p class="footnote">
+						Terminal, editor, pre-commit, CI — same number everywhere.
+						Full disclosure: I wrote it. The metric is the point, the tool is a shortcut.
+					</p>
+					<aside class="notes">
+						Keep the self-promotion to that one honest line — the audience appreciates
+						the disclosure, and the rest of the section is workflows, not features.
+					</aside>
+				</section>
+
+				<!-- 15. Run it -->
+				<section>
+					<p class="eyebrow">Zero config</p>
+					<h2>Point it at your code</h2>
+					<div class="terminal">
+						<div class="terminal-bar">
+							<span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span>
+							<span class="terminal-title">~/talk</span>
+						</div>
+						<pre class="terminal-body"><span class="t-prompt">$</span> complexipy talk.py
+
+<span class="t-dim">────────────────</span> 🐙 <span class="t-purple">complexipy</span> <span class="t-dim">────────────────</span>
+talk.py
+    get_words          1   <span class="t-green">✓ PASSED</span>
+    parse_config       4   <span class="t-green">✓ PASSED</span>
+    sum_of_primes      8   <span class="t-green">✓ PASSED</span>
+    apply_discounts   18   <span class="t-red">✗ FAILED</span>
+
+Failed functions:
+  - talk.py: <span class="t-red">apply_discounts</span>
+<span class="t-dim">────────────</span> 🎉 Analysis completed! <span class="t-dim">────────────</span></pre>
+					</div>
+					<p class="footnote fragment">
+						The numbers next to each function are the same ones we just computed by
+						hand — and <code>apply_discounts</code> already trips the default threshold of 15.
+					</p>
+					<aside class="notes">
+						Continuity: this is literally the file we've been building all talk.
+					</aside>
+				</section>
+
+				<!-- 16. Make it a gate -->
+				<section>
+					<p class="eyebrow">In CI</p>
+					<h2>Make it a gate, not an opinion</h2>
+					<div class="cols">
+						<div>
+							<div class="terminal">
+								<div class="terminal-bar">
+									<span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span>
+									<span class="terminal-title">ci</span>
+								</div>
+								<pre class="terminal-body"><span class="t-prompt">$</span> complexipy . -mx 10
+    apply_discounts   18   <span class="t-red">✗ FAILED</span>
+
+<span class="t-prompt">$</span> echo $?
+<span class="t-red">1</span></pre>
+							</div>
+						</div>
+						<div>
+							<pre><code class="language-yaml hljs cogc-plain" data-trim>
+# .github/workflows/complexity.yml
+- uses: rohaquinlop/complexipy-action@v2
+  with:
+    paths: .
+    max_complexity_allowed: 10
+</code></pre>
+						</div>
+					</div>
+					<div class="takeaway fragment">
+						That <b>exit 1</b> is the whole feature: the pipeline stops when a function
+						becomes hard to read — before a human has to argue about it in review.
+					</div>
+					<aside class="notes">
+						Also available: pre-commit hook, VS Code extension, SARIF/GitLab output.
+						One line each — don't demo them all.
+					</aside>
+				</section>
+
+				<!-- 17. Legacy adoption -->
+				<section>
+					<p class="eyebrow">Real codebases</p>
+					<h2>Adopting it without fixing everything today</h2>
+					<div class="cols" style="margin-bottom:0.5em">
+						<div class="card">
+							<span class="card-kicker">--snapshot-create</span>
+							<h3>Snapshot</h3>
+							<p>Freeze today's debt. Nothing existing fails.</p>
+						</div>
+						<div class="card">
+							<span class="card-kicker">--diff main</span>
+							<h3>Diff</h3>
+							<p>Compare against a git ref — see only what changed.</p>
+						</div>
+						<div class="card">
+							<span class="card-kicker">--ratchet</span>
+							<h3>Ratchet</h3>
+							<p>Fail only if code gets <i>worse</i>. Debt can only shrink.</p>
+						</div>
+					</div>
+					<div class="terminal fragment">
+						<div class="terminal-bar">
+							<span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span>
+							<span class="terminal-title">complexity diff</span>
+						</div>
+						<pre class="terminal-body"><span class="t-prompt">$</span> complexipy . --diff main --ratchet
+
+  <span class="t-red">REGRESSED</span>   api.py::handle_request     12 → 19  (+7)
+  <span class="t-green">IMPROVED</span>    utils.py::flatten_tree     22 → 14  (−8)
+  <span class="t-yellow">NEW</span>         auth.py::validate_token    17  (new)
+
+Net: 1 regressed, 1 improved, 1 new → <span class="t-red">exit 1</span></pre>
+					</div>
+					<aside class="notes">
+						The answer to "cool, but our codebase is 400k lines" — you never have to
+						fix old code to start protecting new code.
+					</aside>
+				</section>
+
+				<!-- 18. Statement -->
+				<section class="statement">
+					<h2>It doesn't tell you your code is bad.<br /><em>It tells you where to look first.</em></h2>
+					<div class="tick"></div>
+					<aside class="notes">
+						Beat. Then: so what do we do when we've found where to look?
+					</aside>
+				</section>
+
+				<!-- ============================================================
+				     ACT 4 — REFACTOR: WATCH THE SCORE MELT
+				     ============================================================ -->
+
+				<!-- 19. Guard clauses -->
+				<section data-auto-animate>
+					<p class="eyebrow">Refactor 1 / 3</p>
+					<h2 data-id="r1-h">Nested conditionals</h2>
+					<div class="chip-row"><span class="score-chip" data-id="r1-chip"><span class="k">Cognitive</span><span class="v sev-high">11</span></span></div>
+					<pre data-id="r1-code"><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+def get_discount(user, cart):
+    if user is not None:            # +1
+        if user.is_active:          # +2
+            if cart.total > 100:    # +3
+                if user.is_premium: # +4
+                    return 0.2
+                else:               # +1
+                    return 0.1
+    return 0.0
+</code></pre>
+					<aside class="notes">
+						Four ifs, each level charging its depth to the next. Ask: what's the
+						actual business rule here? Hard to say out loud — that's the smell.
+					</aside>
+				</section>
+				<section data-auto-animate>
+					<p class="eyebrow">Refactor 1 / 3</p>
+					<h2 data-id="r1-h">→ guard clauses</h2>
+					<div class="chip-row"><span class="score-chip" data-id="r1-chip"><span class="k">Cognitive</span><span class="v sev-low">4</span><span class="delta">−64%</span></span></div>
+					<pre data-id="r1-code"><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+def get_discount(user, cart):
+    if user is None or not user.is_active:  # +1, +1
+        return 0.0
+    if cart.total &lt;= 100:                   # +1
+        return 0.0
+    return 0.2 if user.is_premium else 0.1  # +1
+</code></pre>
+					<div class="takeaway fragment">
+						Same behavior, and now the business rule reads top to bottom:
+						no user? nothing. small cart? nothing. premium? more.
+					</div>
+					<aside class="notes">
+						The early returns are free. The flattening is what pays.
+					</aside>
+				</section>
+
+				<!-- 20. Comprehension -->
+				<section data-auto-animate>
+					<p class="eyebrow">Refactor 2 / 3</p>
+					<h2 data-id="r2-h">Nested accumulation</h2>
+					<div class="chip-row"><span class="score-chip" data-id="r2-chip"><span class="k">Cognitive</span><span class="v sev-mid">10</span></span></div>
+					<pre data-id="r2-code"><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+def active_premium_emails(users):
+    result = []
+    for u in users:                # +1
+        if u.is_active:            # +2
+            if u.is_premium:       # +3
+                if u.email:        # +4
+                    result.append(u.email.lower())
+    return result
+</code></pre>
+					<aside class="notes">
+						Three levels of if inside a for… just to fill a list.
+					</aside>
+				</section>
+				<section data-auto-animate>
+					<p class="eyebrow">Refactor 2 / 3</p>
+					<h2 data-id="r2-h">→ a comprehension</h2>
+					<div class="chip-row"><span class="score-chip" data-id="r2-chip"><span class="k">Cognitive</span><span class="v sev-low">3</span><span class="delta">−70%</span></span></div>
+					<pre data-id="r2-code"><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+def active_premium_emails(users):
+    return [
+        u.email.lower()
+        for u in users                                  # +1
+        if u.is_active and u.is_premium and u.email     # +1, +1
+    ]
+</code></pre>
+					<div class="takeaway fragment">
+						The comprehension flattens three levels into one, and the uniform
+						<code>and</code> chain costs a single point.
+					</div>
+					<aside class="notes">
+						"Shorthand multiple statements readably into one" — this is exactly what
+						rule 1 was written to reward.
+					</aside>
+				</section>
+
+				<!-- 21. any() -->
+				<section data-auto-animate>
+					<p class="eyebrow">Refactor 3 / 3</p>
+					<h2 data-id="r3-h">Flag + break</h2>
+					<div class="chip-row"><span class="score-chip" data-id="r3-chip"><span class="k">Cognitive</span><span class="v sev-mid">6</span></span></div>
+					<pre data-id="r3-code"><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+def has_expired_item(items):
+    found = False
+    for item in items:                    # +1
+        if item.status == "active":       # +2
+            if item.days_left &lt; 0:        # +3
+                found = True
+                break
+    return found
+</code></pre>
+					<aside class="notes">
+						A state variable, a break and two nesting levels — to answer one
+						yes/no question.
+					</aside>
+				</section>
+				<section data-auto-animate>
+					<p class="eyebrow">Refactor 3 / 3</p>
+					<h2 data-id="r3-h">→ any()</h2>
+					<div class="chip-row"><span class="score-chip" data-id="r3-chip"><span class="k">Cognitive</span><span class="v sev-low">2</span><span class="delta">−67%</span></span></div>
+					<pre data-id="r3-code"><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+def has_expired_item(items):
+    return any(
+        item.days_left &lt; 0
+        for item in items                 # +1
+        if item.status == "active"        # +1
+    )
+</code></pre>
+					<div class="takeaway fragment">
+						<code>any()</code> and <code>all()</code> say <i>"does one exist"</i> /
+						<i>"do they all"</i> directly — no flag, no break, no nesting.
+					</div>
+					<aside class="notes">
+						Last refactor — land the pattern on the next slide.
+					</aside>
+				</section>
+
+				<!-- 22. The pattern -->
+				<section class="statement">
+					<h2>None of these got shorter by accident.<br />They got <em>flatter</em>.</h2>
+					<div class="tick"></div>
+					<p class="sub">Remove nesting, not lines — that's what moves the number.</p>
+					<aside class="notes">
+						11→4, 10→3, 6→2. In every case the win came from removing depth, and the
+						metric agreed because it was designed to.
+					</aside>
+				</section>
+
+				<!-- ============================================================
+				     ACT 5 — CLOSE
+				     ============================================================ -->
+
+				<!-- 23. Takeaways -->
+				<section>
+					<p class="eyebrow">Takeaways</p>
+					<h2>Three things to bring home</h2>
+					<div class="numbered">
+						<div class="row fragment">
+							<span class="n">01</span>
+							<p><b>Cyclomatic counts paths, cognitive counts effort.</b>
+							Equal CC can hide wildly different reading costs — measure what you
+							actually care about.</p>
+						</div>
+						<div class="row fragment">
+							<span class="n">02</span>
+							<p><b>Nesting is the dominant cost.</b> Guard clauses, comprehensions,
+							<code>any()</code>/<code>all()</code>, extracted functions — flatten first.</p>
+						</div>
+						<div class="row fragment">
+							<span class="n">03</span>
+							<p><b>Automate the measurement.</b> A threshold in CI turns "this feels
+							unreadable" into a number nobody has to argue about.</p>
+						</div>
+					</div>
+					<aside class="notes">
+						Simple code isn't short code — it's code you understand on first read.
+					</aside>
+				</section>
+
+				<!-- 24. Thanks -->
+				<section class="centered">
+					<img src="assets/img/iso_logo_pycon_2026.svg" alt="PyCon Colombia 2026" style="height:3.2em; margin-bottom:0.4em" />
+					<h2>Thank you! <span class="accent">Questions?</span></h2>
+					<div class="tick"></div>
+					<div class="link-grid">
+						<div class="link-card"><span class="k">Paper</span><span class="v">sonarsource.com → Cognitive Complexity</span></div>
+						<div class="link-card"><span class="k">GitHub</span><span class="v">github.com/rohaquinlop/complexipy</span></div>
+						<div class="link-card"><span class="k">Docs</span><span class="v">rohaquinlop.github.io/complexipy</span></div>
+						<div class="link-card"><span class="k">Speaker</span><span class="v">linkedin.com/in/robin-hafid</span></div>
+					</div>
+					<p class="footnote" style="margin-top:1em">Robin Hafid Quintero Lopez · rohaquinlop · PyCon Colombia 2026</p>
+					<aside class="notes">
+						10 minutes of Q&amp;A. Likely questions: match/case vs if performance,
+						how the decorator exception interacts with functools.wraps, thresholds.
+					</aside>
+				</section>
+
+			</div>
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="dist/plugin/notes.js"></script>
+		<script src="dist/plugin/markdown.js"></script>
+		<script src="dist/plugin/highlight.js"></script>
+		<script src="assets/js/cogc-scorer.js"></script>
+		<script>
+			Reveal.initialize({
+				hash: true,
+				// 16:9 design canvas (PyCon Colombia recommended ratio); reveal
+				// scales it to any screen, letterboxing other aspect ratios
+				width: 1280,
+				height: 720,
+				margin: 0.06,
+				minScale: 0.1,
+				maxScale: 3.0, // fill 4K projectors instead of capping at 2x
+				transition: 'slide',
+				backgroundTransition: 'fade',
+				plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
+			});
+		</script>
+	</body>
+</html>

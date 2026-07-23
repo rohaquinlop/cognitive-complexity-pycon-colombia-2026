@@ -68,7 +68,7 @@ Invariants that will break the scorer if violated:
 ## Layout constraints
 
 - Design canvas is **1280×720 (16:9)**; reveal scales it to any screen (`maxScale: 3.0` fills 4K). Everything on a slide must fit the 720px design height — overflow is silently cut. Long snippets (≥ ~10 lines) or scorer slides with a takeaway below use `<pre class="code-sm">`.
-- Reusable patterns in `pycon-theme.css`: `.takeaway` (rule banner), `.cogc-versus` (big-number comparison; its `.cogc-versus-note` is a full-row caption), `.terminal` (CLI mockup), `.card`/`.cols`, `.statement` (breathing-beat slides), `.score-chip` (used with `data-auto-animate` on the refactor before/after pairs).
+- Reusable patterns in `pycon-theme.css`: `.takeaway` (rule banner), `.cogc-versus` (big-number comparison; its `.cogc-versus-note` is a full-row caption), `.terminal` (CLI mockup), `.card`/`.cols`, `.statement` (breathing-beat slides), `.score-chip` (used with `data-auto-animate` on the refactor slides — each refactor is a chain of sections sharing `data-id`s so reveal morphs the code one transformation per click while the chip's score + `.delta` update step by step).
 - Palette is PyCon Colombia brand: `#FFFFFF`, `#F2F3FD`, `#B6BDF0`, `#614AD3` (tokens in `:root`), with a severity ramp for scores (green ≤ 5, amber 6–10, red ≥ 11).
 
 ## Content rule

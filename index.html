@@ -651,12 +651,12 @@ Net: 1 regressed, 1 improved, 1 new → <span class="t-red">exit 1</span></pre>
 				     ACT 4 — REFACTOR: WATCH THE SCORE MELT
 				     ============================================================ -->
 
-				<!-- 19. Guard clauses -->
+				<!-- 19. Refactor 1: nested conditionals, peeled one guard per click -->
 				<section data-auto-animate>
-					<p class="eyebrow">Refactor 1 / 3</p>
+					<p class="eyebrow">Refactor 1 / 4</p>
 					<h2 data-id="r1-h">Nested conditionals</h2>
 					<div class="chip-row"><span class="score-chip" data-id="r1-chip"><span class="k">Cognitive</span><span class="v sev-high">11</span></span></div>
-					<pre data-id="r1-code"><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+					<pre data-id="r1-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers>
 def get_discount(user, cart):
     if user is not None:            # +1
         if user.is_active:          # +2
@@ -668,37 +668,104 @@ def get_discount(user, cart):
     return 0.0
 </code></pre>
 					<aside class="notes">
-						Four ifs, each level charging its depth to the next. Ask: what's the
-						actual business rule here? Hard to say out loud — that's the smell.
+						Four ifs, each level charging its depth to the next. We'll peel one
+						guard per click and watch the number fall — same behavior throughout.
 					</aside>
 				</section>
 				<section data-auto-animate>
-					<p class="eyebrow">Refactor 1 / 3</p>
-					<h2 data-id="r1-h">→ guard clauses</h2>
-					<div class="chip-row"><span class="score-chip" data-id="r1-chip"><span class="k">Cognitive</span><span class="v sev-low">4</span><span class="delta">−64%</span></span></div>
-					<pre data-id="r1-code"><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+					<p class="eyebrow">Refactor 1 / 4</p>
+					<h2 data-id="r1-h">→ lift the null guard</h2>
+					<div class="chip-row"><span class="score-chip" data-id="r1-chip"><span class="k">Cognitive</span><span class="v sev-mid">8</span><span class="delta">−27%</span></span></div>
+					<pre data-id="r1-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers="2-3">
 def get_discount(user, cart):
-    if user is None or not user.is_active:  # +1, +1
+    if user is None:                # +1
+        return 0.0
+    if user.is_active:              # +1
+        if cart.total > 100:        # +2
+            if user.is_premium:     # +3
+                return 0.2
+            else:                   # +1
+                return 0.1
+    return 0.0
+</code></pre>
+					<aside class="notes">
+						Invert the outer check into an early return. Everything below de-indents
+						one level, so the deepest if drops from +4 to +3: 11 → 8.
+					</aside>
+				</section>
+				<section data-auto-animate>
+					<p class="eyebrow">Refactor 1 / 4</p>
+					<h2 data-id="r1-h">→ lift the active guard</h2>
+					<div class="chip-row"><span class="score-chip" data-id="r1-chip"><span class="k">Cognitive</span><span class="v sev-mid">6</span><span class="delta">−45%</span></span></div>
+					<pre data-id="r1-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers="4-5">
+def get_discount(user, cart):
+    if user is None:                # +1
+        return 0.0
+    if not user.is_active:          # +1
+        return 0.0
+    if cart.total > 100:            # +1
+        if user.is_premium:         # +2
+            return 0.2
+        else:                       # +1
+            return 0.1
+    return 0.0
+</code></pre>
+					<aside class="notes">
+						Same move on is_active. The pyramid keeps collapsing one floor at a time.
+					</aside>
+				</section>
+				<section data-auto-animate>
+					<p class="eyebrow">Refactor 1 / 4</p>
+					<h2 data-id="r1-h">→ lift the cart guard</h2>
+					<div class="chip-row"><span class="score-chip" data-id="r1-chip"><span class="k">Cognitive</span><span class="v sev-low">5</span><span class="delta">−55%</span></span></div>
+					<pre data-id="r1-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers="6-7">
+def get_discount(user, cart):
+    if user is None:                # +1
+        return 0.0
+    if not user.is_active:          # +1
+        return 0.0
+    if cart.total &lt;= 100:           # +1
+        return 0.0
+    if user.is_premium:             # +1
+        return 0.2
+    else:                           # +1
+        return 0.1
+</code></pre>
+					<aside class="notes">
+						Every branch is flat now — no if is nested inside another. Only the
+						premium if/else is left to tidy.
+					</aside>
+				</section>
+				<section data-auto-animate>
+					<p class="eyebrow">Refactor 1 / 4</p>
+					<h2 data-id="r1-h">→ collapse the tail</h2>
+					<div class="chip-row"><span class="score-chip" data-id="r1-chip"><span class="k">Cognitive</span><span class="v sev-low">4</span><span class="delta">−64%</span></span></div>
+					<pre data-id="r1-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers="8">
+def get_discount(user, cart):
+    if user is None:                        # +1
+        return 0.0
+    if not user.is_active:                  # +1
         return 0.0
     if cart.total &lt;= 100:                   # +1
         return 0.0
     return 0.2 if user.is_premium else 0.1  # +1
 </code></pre>
 					<div class="takeaway fragment">
-						Same behavior, and now the business rule reads top to bottom:
-						no user? nothing. small cart? nothing. premium? more.
+						Same behavior, and the rule reads top to bottom: no user? nothing.
+						inactive? nothing. small cart? nothing. otherwise premium decides.
 					</div>
 					<aside class="notes">
-						The early returns are free. The flattening is what pays.
+						11 → 4 in four small, safe edits. The early returns are free; the
+						flattening is what pays.
 					</aside>
 				</section>
 
-				<!-- 20. Comprehension -->
+				<!-- 20. Refactor 2: nested accumulation -> comprehension -->
 				<section data-auto-animate>
 					<p class="eyebrow">Refactor 2 / 3</p>
 					<h2 data-id="r2-h">Nested accumulation</h2>
 					<div class="chip-row"><span class="score-chip" data-id="r2-chip"><span class="k">Cognitive</span><span class="v sev-mid">10</span></span></div>
-					<pre data-id="r2-code"><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+					<pre data-id="r2-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers>
 def active_premium_emails(users):
     result = []
     for u in users:                # +1
@@ -714,9 +781,26 @@ def active_premium_emails(users):
 				</section>
 				<section data-auto-animate>
 					<p class="eyebrow">Refactor 2 / 3</p>
+					<h2 data-id="r2-h">→ flatten the filters</h2>
+					<div class="chip-row"><span class="score-chip" data-id="r2-chip"><span class="k">Cognitive</span><span class="v sev-low">4</span><span class="delta">−60%</span></span></div>
+					<pre data-id="r2-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers="4">
+def active_premium_emails(users):
+    result = []
+    for u in users:                                    # +1
+        if u.is_active and u.is_premium and u.email:   # +2, +1
+            result.append(u.email.lower())
+    return result
+</code></pre>
+					<aside class="notes">
+						Three nested ifs become one and-chain: +2 for the if, +1 for the whole
+						uniform and-sequence. That single edit is already 10 → 4.
+					</aside>
+				</section>
+				<section data-auto-animate>
+					<p class="eyebrow">Refactor 2 / 3</p>
 					<h2 data-id="r2-h">→ a comprehension</h2>
 					<div class="chip-row"><span class="score-chip" data-id="r2-chip"><span class="k">Cognitive</span><span class="v sev-low">3</span><span class="delta">−70%</span></span></div>
-					<pre data-id="r2-code"><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+					<pre data-id="r2-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers="4-5">
 def active_premium_emails(users):
     return [
         u.email.lower()
@@ -725,21 +809,21 @@ def active_premium_emails(users):
     ]
 </code></pre>
 					<div class="takeaway fragment">
-						The comprehension flattens three levels into one, and the uniform
-						<code>and</code> chain costs a single point.
+						The comprehension drops the loop's nesting level, so the same filter
+						now costs +1 instead of +2.
 					</div>
 					<aside class="notes">
-						"Shorthand multiple statements readably into one" — this is exactly what
+						"Shorthand multiple statements readably into one" — exactly what
 						rule 1 was written to reward.
 					</aside>
 				</section>
 
-				<!-- 21. any() -->
+				<!-- 21. Refactor 3: flag + break -> any() -->
 				<section data-auto-animate>
 					<p class="eyebrow">Refactor 3 / 3</p>
 					<h2 data-id="r3-h">Flag + break</h2>
 					<div class="chip-row"><span class="score-chip" data-id="r3-chip"><span class="k">Cognitive</span><span class="v sev-mid">6</span></span></div>
-					<pre data-id="r3-code"><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+					<pre data-id="r3-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers>
 def has_expired_item(items):
     found = False
     for item in items:                    # +1
@@ -756,9 +840,27 @@ def has_expired_item(items):
 				</section>
 				<section data-auto-animate>
 					<p class="eyebrow">Refactor 3 / 3</p>
+					<h2 data-id="r3-h">→ flatten the filters</h2>
+					<div class="chip-row"><span class="score-chip" data-id="r3-chip"><span class="k">Cognitive</span><span class="v sev-low">4</span><span class="delta">−33%</span></span></div>
+					<pre data-id="r3-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers="4">
+def has_expired_item(items):
+    found = False
+    for item in items:                                      # +1
+        if item.status == "active" and item.days_left &lt; 0:  # +2, +1
+            found = True
+            break
+    return found
+</code></pre>
+					<aside class="notes">
+						Collapse the two conditions into one and-chain first: one if, one
+						and-sequence. 6 → 4 before we even reach for a builtin.
+					</aside>
+				</section>
+				<section data-auto-animate>
+					<p class="eyebrow">Refactor 3 / 3</p>
 					<h2 data-id="r3-h">→ any()</h2>
 					<div class="chip-row"><span class="score-chip" data-id="r3-chip"><span class="k">Cognitive</span><span class="v sev-low">2</span><span class="delta">−67%</span></span></div>
-					<pre data-id="r3-code"><code class="language-python hljs cogc-plain" data-trim data-line-numbers>
+					<pre data-id="r3-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers="4-5">
 def has_expired_item(items):
     return any(
         item.days_left &lt; 0
@@ -771,7 +873,7 @@ def has_expired_item(items):
 						<i>"do they all"</i> directly — no flag, no break, no nesting.
 					</div>
 					<aside class="notes">
-						Last refactor — land the pattern on the next slide.
+						6 → 4 → 2. Land the pattern on the next slide.
 					</aside>
 				</section>
 

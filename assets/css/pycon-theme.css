@@ -161,6 +161,11 @@
 /* non-scored illustrative snippets: no dimming */
 .reveal .hljs.cogc-plain.has-highlights tr:not(.highlight-line) { opacity: 1; }
 
+/* refactor chains: focus the line(s) changed this step, dim the rest, so the
+   eye lands on each edit as the code morphs (higher specificity than the
+   cogc-plain no-dim rule above, so it wins) */
+.reveal .hljs.cogc-plain.cogc-focus.has-highlights tr:not(.highlight-line) { opacity: 0.32; }
+
 /* ---------------------------------------------------------------- */
 /* Live scorer                                                       */
 /* ---------------------------------------------------------------- */

@@ -142,3 +142,78 @@ def has_expired_item_after(items):
         for item in items
         if item.status == "active"
     )
+
+
+# ---------------------------------------------------------------------------
+# Intermediate states for the step-by-step refactor slides (Act 4).
+# Each function is one click in the auto-animate chain; the deck shows the
+# cognitive-complexity score at every step, so every state is scored here.
+# ---------------------------------------------------------------------------
+
+
+# Refactor 1: nested conditionals -> guard clauses, peeled one guard at a time.
+def get_discount_step1(user, cart):
+    if user is None:
+        return 0.0
+    if user.is_active:
+        if cart.total > 100:
+            if user.is_premium:
+                return 0.2
+            else:
+                return 0.1
+    return 0.0
+
+
+def get_discount_step2(user, cart):
+    if user is None:
+        return 0.0
+    if not user.is_active:
+        return 0.0
+    if cart.total > 100:
+        if user.is_premium:
+            return 0.2
+        else:
+            return 0.1
+    return 0.0
+
+
+def get_discount_step3(user, cart):
+    if user is None:
+        return 0.0
+    if not user.is_active:
+        return 0.0
+    if cart.total <= 100:
+        return 0.0
+    if user.is_premium:
+        return 0.2
+    else:
+        return 0.1
+
+
+def get_discount_step4(user, cart):
+    if user is None:
+        return 0.0
+    if not user.is_active:
+        return 0.0
+    if cart.total <= 100:
+        return 0.0
+    return 0.2 if user.is_premium else 0.1
+
+
+# Refactor 2: nested accumulation -> comprehension, via a flattened and-chain.
+def active_premium_emails_step1(users):
+    result = []
+    for u in users:
+        if u.is_active and u.is_premium and u.email:
+            result.append(u.email.lower())
+    return result
+
+
+# Refactor 3: flag + break -> any(), via a flattened and-chain.
+def has_expired_item_step1(items):
+    found = False
+    for item in items:
+        if item.status == "active" and item.days_left < 0:
+            found = True
+            break
+    return found

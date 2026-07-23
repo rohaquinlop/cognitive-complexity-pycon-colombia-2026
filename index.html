@@ -543,14 +543,11 @@ uv add complexipy
 
 <span class="t-dim">────────────────</span> 🐙 <span class="t-purple">complexipy</span> <span class="t-dim">────────────────</span>
 talk.py
-    get_words          1   <span class="t-green">✓ PASSED</span>
-    parse_config       4   <span class="t-green">✓ PASSED</span>
-    sum_of_primes      8   <span class="t-green">✓ PASSED</span>
-    apply_discounts   18   <span class="t-red">✗ FAILED</span>
-
-Failed functions:
-  - talk.py: <span class="t-red">apply_discounts</span>
-<span class="t-dim">────────────</span> 🎉 Analysis completed! <span class="t-dim">────────────</span></pre>
+    get_words          1   <span class="t-green">✅ PASSED</span>
+    parse_config       4   <span class="t-green">✅ PASSED</span>
+    sum_of_primes      8   <span class="t-green">✅ PASSED</span>
+    apply_discounts   18   <span class="t-red">❌ FAILED</span>
+<span class="t-dim">──────────</span> 🎉 Analysis completed! 🎉 <span class="t-dim">──────────</span></pre>
 					</div>
 					<p class="footnote fragment">
 						The numbers next to each function are the same ones we just computed by
@@ -573,7 +570,7 @@ Failed functions:
 									<span class="terminal-title">ci</span>
 								</div>
 								<pre class="terminal-body"><span class="t-prompt">$</span> complexipy . -mx 10
-    apply_discounts   18   <span class="t-red">✗ FAILED</span>
+    apply_discounts   18   <span class="t-red">❌ FAILED</span>
 
 <span class="t-prompt">$</span> echo $?
 <span class="t-red">1</span></pre>
@@ -610,14 +607,14 @@ Failed functions:
 							<p>Freeze today's debt. Nothing existing fails.</p>
 						</div>
 						<div class="card">
-							<span class="card-kicker">--diff main</span>
+							<span class="card-kicker">--diff-only main</span>
 							<h3>Diff</h3>
-							<p>Compare against a git ref — see only what changed.</p>
+							<p>Compare against a git ref — see what changed, no gate.</p>
 						</div>
 						<div class="card">
-							<span class="card-kicker">--ratchet</span>
+							<span class="card-kicker">--diff main</span>
 							<h3>Ratchet</h3>
-							<p>Fail only if code gets <i>worse</i>. Debt can only shrink.</p>
+							<p>Fail only when changed code gets <i>worse</i>. Debt can only shrink.</p>
 						</div>
 					</div>
 					<div class="terminal fragment">
@@ -625,7 +622,7 @@ Failed functions:
 							<span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span>
 							<span class="terminal-title">complexity diff</span>
 						</div>
-						<pre class="terminal-body"><span class="t-prompt">$</span> complexipy . --diff main --ratchet
+						<pre class="terminal-body"><span class="t-prompt">$</span> complexipy . --diff main
 
   <span class="t-red">REGRESSED</span>   api.py::handle_request     12 → 19  (+7)
   <span class="t-green">IMPROVED</span>    utils.py::flatten_tree     22 → 14  (−8)
@@ -635,7 +632,9 @@ Net: 1 regressed, 1 improved, 1 new → <span class="t-red">exit 1</span></pre>
 					</div>
 					<aside class="notes">
 						The answer to "cool, but our codebase is 400k lines" — you never have to
-						fix old code to start protecting new code.
+						fix old code to start protecting new code. As of complexipy 6.1+,
+						--diff enforces the threshold by default (the old --ratchet flag is
+						deprecated); use --diff-only for a visual, non-failing comparison.
 					</aside>
 				</section>
 

@@ -73,4 +73,4 @@ Invariants that will break the scorer if violated:
 
 ## Content rule
 
-Every complexity number displayed on a slide must be reproducible: add the snippet to `talk.py` and check it with `complexipy` (and `radon` if the slide claims a cyclomatic number) before putting the number on the slide. All current numbers are verified against complexipy 6.0.1.
+Every complexity number displayed on a slide must be reproducible: add the snippet to `talk.py` and check it with `complexipy` (and `radon` if the slide claims a cyclomatic number) before putting the number on the slide. All current numbers are verified against complexipy 6.2.0.

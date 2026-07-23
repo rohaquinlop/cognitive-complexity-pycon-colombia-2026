@@ -490,6 +490,38 @@ tr.highlight-line .cogc-badge {
 }
 .link-grid .link-card .v { font-family: var(--r-code-font); color: var(--pycon-purple); }
 
+/* feedback QR shown on the closing / Q&A slide */
+.feedback-qr {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  justify-content: center;
+  width: fit-content;
+  margin: 0.5em auto 0;
+  padding: 0.4em 0.7em;
+  background: var(--pycon-white);
+  border: 1px solid var(--pycon-border);
+  border-radius: 12px;
+}
+.feedback-qr img {
+  display: block;
+  height: 3em;
+  width: 3em;
+  border-radius: 6px;
+}
+.feedback-qr .feedback-qr-text { text-align: left; }
+.feedback-qr .feedback-qr-text .k {
+  display: block;
+  font-size: 0.6em;
+  font-weight: 600;
+  color: var(--pycon-ink);
+}
+.feedback-qr .feedback-qr-text .v {
+  display: block;
+  font-size: 0.5em;
+  color: var(--pycon-muted);
+}
+
 /* static score chip used on the auto-animate refactor slides */
 .chip-row { display: flex; justify-content: flex-end; margin-bottom: 0.3em; }
 .score-chip {

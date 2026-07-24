@@ -762,7 +762,7 @@ def get_discount(user, cart):
 
 				<!-- 20. Refactor 2: nested accumulation -> comprehension -->
 				<section data-auto-animate>
-					<p class="eyebrow">Refactor 2 / 3</p>
+					<p class="eyebrow">Refactor 2 / 4</p>
 					<h2 data-id="r2-h">Nested accumulation</h2>
 					<div class="chip-row"><span class="score-chip" data-id="r2-chip"><span class="k">Cognitive</span><span class="v sev-mid">10</span></span></div>
 					<pre data-id="r2-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers>
@@ -780,7 +780,7 @@ def active_premium_emails(users):
 					</aside>
 				</section>
 				<section data-auto-animate>
-					<p class="eyebrow">Refactor 2 / 3</p>
+					<p class="eyebrow">Refactor 2 / 4</p>
 					<h2 data-id="r2-h">→ flatten the filters</h2>
 					<div class="chip-row"><span class="score-chip" data-id="r2-chip"><span class="k">Cognitive</span><span class="v sev-low">4</span><span class="delta">−60%</span></span></div>
 					<pre data-id="r2-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers="4">
@@ -797,7 +797,7 @@ def active_premium_emails(users):
 					</aside>
 				</section>
 				<section data-auto-animate>
-					<p class="eyebrow">Refactor 2 / 3</p>
+					<p class="eyebrow">Refactor 2 / 4</p>
 					<h2 data-id="r2-h">→ a comprehension</h2>
 					<div class="chip-row"><span class="score-chip" data-id="r2-chip"><span class="k">Cognitive</span><span class="v sev-low">3</span><span class="delta">−70%</span></span></div>
 					<pre data-id="r2-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers="4-5">
@@ -820,7 +820,7 @@ def active_premium_emails(users):
 
 				<!-- 21. Refactor 3: flag + break -> any() -->
 				<section data-auto-animate>
-					<p class="eyebrow">Refactor 3 / 3</p>
+					<p class="eyebrow">Refactor 3 / 4</p>
 					<h2 data-id="r3-h">Flag + break</h2>
 					<div class="chip-row"><span class="score-chip" data-id="r3-chip"><span class="k">Cognitive</span><span class="v sev-mid">6</span></span></div>
 					<pre data-id="r3-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers>
@@ -839,7 +839,7 @@ def has_expired_item(items):
 					</aside>
 				</section>
 				<section data-auto-animate>
-					<p class="eyebrow">Refactor 3 / 3</p>
+					<p class="eyebrow">Refactor 3 / 4</p>
 					<h2 data-id="r3-h">→ flatten the filters</h2>
 					<div class="chip-row"><span class="score-chip" data-id="r3-chip"><span class="k">Cognitive</span><span class="v sev-low">4</span><span class="delta">−33%</span></span></div>
 					<pre data-id="r3-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers="4">
@@ -857,7 +857,7 @@ def has_expired_item(items):
 					</aside>
 				</section>
 				<section data-auto-animate>
-					<p class="eyebrow">Refactor 3 / 3</p>
+					<p class="eyebrow">Refactor 3 / 4</p>
 					<h2 data-id="r3-h">→ any()</h2>
 					<div class="chip-row"><span class="score-chip" data-id="r3-chip"><span class="k">Cognitive</span><span class="v sev-low">2</span><span class="delta">−67%</span></span></div>
 					<pre data-id="r3-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers="4-5">
@@ -877,13 +877,63 @@ def has_expired_item(items):
 					</aside>
 				</section>
 
+				<!-- 21b. Refactor 4: nested if/elif dispatch -> match -->
+				<section data-auto-animate>
+					<p class="eyebrow">Refactor 4 / 4</p>
+					<h2 data-id="r4-h">Nested dispatch</h2>
+					<div class="chip-row"><span class="score-chip" data-id="r4-chip"><span class="k">Cognitive</span><span class="v sev-mid">7</span></span></div>
+					<pre data-id="r4-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers>
+def run(command):
+    parts = command.split()
+    if parts[0] == "move":          # +1
+        if len(parts) == 3:         # +2
+            return f"move to {parts[1]},{parts[2]}"
+    elif parts[0] == "rotate":      # +1
+        if len(parts) == 2:         # +2
+            return f"rotate {parts[1]}"
+    elif parts[0] == "quit":        # +1
+        return "bye"
+    return "?"
+</code></pre>
+					<aside class="notes">
+						Branching on the shape of the input: which command, how many
+						arguments. Every "how many" check adds another nested if.
+					</aside>
+				</section>
+				<section data-auto-animate>
+					<p class="eyebrow">Refactor 4 / 4</p>
+					<h2 data-id="r4-h">→ match the pattern</h2>
+					<div class="chip-row"><span class="score-chip" data-id="r4-chip"><span class="k">Cognitive</span><span class="v sev-low">1</span><span class="delta">−86%</span></span></div>
+					<pre data-id="r4-code"><code class="language-python hljs cogc-plain cogc-focus" data-trim data-line-numbers="3,5,7">
+def run(command):
+    match command.split():          # +1
+        case ["move", x, y]:
+            return f"move to {x},{y}"
+        case ["rotate", angle]:
+            return f"rotate {angle}"
+        case ["quit"]:
+            return "bye"
+        case _:
+            return "?"
+</code></pre>
+					<div class="takeaway fragment">
+						One <code>case</code> per shape checks length, position and value
+						at once — the indexing and the nested guards all vanish.
+					</div>
+					<aside class="notes">
+						7 → 1. The other three peeled nesting away by hand; here the right
+						construct erases it in one move. When you're branching on the shape
+						of data, match is built for exactly that.
+					</aside>
+				</section>
+
 				<!-- 22. The pattern -->
 				<section class="statement">
 					<h2>None of these got shorter by accident.<br />They got <em>flatter</em>.</h2>
 					<div class="tick"></div>
 					<p class="sub">Remove nesting, not lines — that's what moves the number.</p>
 					<aside class="notes">
-						11→4, 10→3, 6→2. In every case the win came from removing depth, and the
+						11→4, 10→3, 6→2, 7→1. In every case the win came from removing depth, and the
 						metric agreed because it was designed to.
 					</aside>
 				</section>

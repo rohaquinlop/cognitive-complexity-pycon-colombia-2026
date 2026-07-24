@@ -217,3 +217,29 @@ def has_expired_item_step1(items):
             found = True
             break
     return found
+
+
+# Refactor 4: nested if/elif dispatch -> match with structural patterns.
+def run_command_before(command):
+    parts = command.split()
+    if parts[0] == "move":
+        if len(parts) == 3:
+            return f"move to {parts[1]},{parts[2]}"
+    elif parts[0] == "rotate":
+        if len(parts) == 2:
+            return f"rotate {parts[1]}"
+    elif parts[0] == "quit":
+        return "bye"
+    return "?"
+
+
+def run_command_after(command):
+    match command.split():
+        case ["move", x, y]:
+            return f"move to {x},{y}"
+        case ["rotate", angle]:
+            return f"rotate {angle}"
+        case ["quit"]:
+            return "bye"
+        case _:
+            return "?"
